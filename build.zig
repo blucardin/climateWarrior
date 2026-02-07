@@ -8,6 +8,7 @@ pub fn build(b: *std.Build) !void {
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
+        // .shell = "minshell.html",
     });
     const raylib = raylib_dep.module("raylib");
     const raylib_artifact = raylib_dep.artifact("raylib");
@@ -37,7 +38,7 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .flags = emcc_flags,
             .settings = emcc_settings,
-            .shell_file_path = emsdk.shell(raylib_dep.builder),
+            .shell_file_path = b.path("html_shell/minshell.html"), // emsdk.shell(raylib_dep.builder),
             .install_dir = install_dir,
             .embed_paths = &.{.{ .src_path = "resources/" }},
         });
