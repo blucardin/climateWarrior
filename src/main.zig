@@ -47,11 +47,31 @@ pub fn main() anyerror!void {
 
     std.debug.print("Hello, {s}!\n", .{"World"});
 
+    var player_velocity = rl.Vector3.zero();
+    const speed = 1.0;
+    const gravity = 9.8;
+
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
         camera.update(.first_person);
+
+        // camera.update(.first_person);
+        if (rl.isKeyDown(.space)) {
+            if (camera.position.y <= 2) {
+                player_velocity.y += 5.0;
+            }
+        }
+
+        camera.position = camera.position.add(player_velocity.scale(rl.getFrameTime() * speed));
+
+        if (camera.position.y < 2) {
+            player_velocity = rl.Vector3.zero();
+        } else {
+            player_velocity.y -= gravity * rl.getFrameTime();
+        }
+
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -85,5 +105,8 @@ pub fn main() anyerror!void {
         rl.drawText("- Move with keys: W, A, S, D", 40, 40, 10, .dark_gray);
         rl.drawText("- Mouse move to look around", 40, 60, 10, .dark_gray);
         //----------------------------------------------------------------------------------
+
+        rl.drawText(rl.textFormat("- Position: (%06.3f, %06.3f, %06.3f)", .{ camera.position.x, camera.position.y, camera.position.z }), 610, 60, 10, .black);
+        rl.drawText(rl.textFormat("- Velocity: (%06.3f, %06.3f, %06.3f)", .{ player_velocity.x, player_velocity.y, player_velocity.z }), 610, 80, 10, .black);
     }
 }
