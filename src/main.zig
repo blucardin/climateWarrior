@@ -3,9 +3,17 @@
 const rl = @import("raylib");
 const std = @import("std");
 
+const eql = std.mem.eql;
+const ArrayList = std.ArrayList;
+
 const MAX_COLUMNS = 20;
 
 pub fn main() anyerror!void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
     // Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 800;
@@ -41,6 +49,14 @@ pub fn main() anyerror!void {
         );
     }
 
+    const ball = struct {
+        position: rl.Vector3,
+        velocity: rl.Vector3,
+    };
+
+    var player_balls: ArrayList(ball) = .empty;
+    defer player_balls.deinit(allocator);
+
     rl.disableCursor(); // Limit cursor to relative movement inside the window
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -72,6 +88,25 @@ pub fn main() anyerror!void {
             player_velocity.y -= gravity * rl.getFrameTime();
         }
 
+        if (rl.isMouseButtonPressed(.left)) {
+            std.debug.print("Button Pressed!\n", .{});
+            const forward = camera.target.subtract(camera.position).normalize();
+            const bullet_velocity = forward.scale(10.0);
+            player_balls.append(allocator, .{
+                .position = camera.position,
+                .velocity = bullet_velocity,
+            }) catch {
+                std.debug.print("Failed to append bullet:\n", .{});
+            };
+
+            for (player_balls.items) |item| {
+                std.debug.print("{d}, ", .{item.position.x});
+            }
+            std.debug.print("\n", .{});
+
+            // std.debug.print("Button Pressed!\n", .{});
+        }
+
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -95,6 +130,23 @@ pub fn main() anyerror!void {
             for (heights, 0..) |height, i| {
                 rl.drawCube(positions[i], 2.0, height, 2.0, colors[i]);
                 rl.drawCubeWires(positions[i], 2.0, height, 2.0, .maroon);
+            }
+
+            var toRemove: ArrayList(usize) = .empty;
+            defer toRemove.deinit(allocator);
+
+            for (player_balls.items, 0..) |bullet, index| {
+                rl.drawSphere(bullet.position, 0.2, .red);
+                player_balls.items[index].position = bullet.position.add(bullet.velocity.scale(rl.getFrameTime() * speed));
+                player_balls.items[index].velocity.y -= gravity * rl.getFrameTime() * 0.5;
+
+                if (bullet.position.y <= 0) {
+                    toRemove.append(allocator, index) catch {};
+                }
+            }
+
+            for (toRemove.items) |index| {
+                _ = player_balls.swapRemove(index);
             }
         }
 
