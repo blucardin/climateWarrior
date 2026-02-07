@@ -12,15 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Test
     steps:
-      - uses: actions/checkout@v3
-      - uses: mlugg/setup-zig@v1
+      - uses: actions/checkout@v4
+      - name: Setup Zig Compiler
+        uses: mlugg/setup-zig@v2.2.1
+  
       - run: zig build test
       
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mlugg/setup-zig@v1
+      
+      - name: Setup Zig Compiler
+        uses: mlugg/setup-zig@v2.2.1
     
       - name: build_the_site
         id: zig_build_web
